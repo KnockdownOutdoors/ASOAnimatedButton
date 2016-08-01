@@ -32,4 +32,9 @@
 @property (weak, nonatomic) IBOutlet UIButton *menuItem3;
 @property (weak, nonatomic) IBOutlet UIButton *menuItem4;
 
+@property (weak, nonatomic) IBOutlet UILabel *menuLabel1;
+@property (weak, nonatomic) IBOutlet UILabel *menuLabel2;
+@property (weak, nonatomic) IBOutlet UILabel *menuLabel3;
+@property (weak, nonatomic) IBOutlet UILabel *menuLabel4;
+
 @end

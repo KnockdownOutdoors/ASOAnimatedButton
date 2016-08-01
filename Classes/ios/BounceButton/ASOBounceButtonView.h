@@ -102,6 +102,13 @@ typedef enum {
 - (void) addBounceButtons:(NSArray *)arrBounceButtons;
 
 /**
+ *  Add all bounce labels defined in an array to this view
+ *
+ *  @param arrBounceLabels An array of UILabel object to be animated in this bounce button view
+ */
+- (void) addBounceLabels:(NSArray *)arrBounceLabels;
+
+/**
  *  Launch this bounce button view
  *
  *  @param animationStyle ASOAnimationStyle used when launching this bounce button view

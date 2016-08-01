@@ -50,6 +50,12 @@
                                    nil]; // Add all of the defined 'menu item button' to 'menu item view'
     [self.menuItemView addBounceButtons:arrMenuItemButtons];
     
+    NSArray *arrMenuItemLabels = [[NSArray alloc] initWithObjects:self.menuItemView.menuLabel1,
+                                  self.menuItemView.menuLabel2,
+                                  self.menuItemView.menuLabel3,
+                                  self.menuItemView.menuLabel4,nil];
+    [self.menuItemView addBounceLabels:arrMenuItemLabels];
+    
     // Set the bouncing distance, speed and fade-out effect duration here. Refer to the ASOBounceButtonView public properties
     [self.menuItemView setSpeed:[NSNumber numberWithFloat:0.3f]];
     [self.menuItemView setBouncingDistance:[NSNumber numberWithFloat:0.3f]];

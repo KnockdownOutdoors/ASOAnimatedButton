@@ -33,6 +33,7 @@
 @interface ASOBounceButtonView()
 
 @property (strong, nonatomic) NSMutableArray *bounceButtons;
+@property (strong, nonatomic) NSMutableArray *bounceLabels;
 @property (nonatomic) CGPoint startAnimationPoint;
 @property (strong, readwrite, nonatomic) NSNumber *collapsedViewDuration;
 
@@ -99,6 +100,18 @@
     }
 }
 
+-(void)addBounceLabels:(NSArray *)arrBounceLabels
+{
+    if (!self.bounceLabels) {
+        self.bounceLabels = [[NSMutableArray alloc] init];
+    }
+    [self.bounceLabels addObjectsFromArray:arrBounceLabels];
+    
+    for (int16_t idx = 0; idx < [self.bounceLabels count]; idx++) {
+        [[self.bounceLabels objectAtIndex:idx] setTag:idx];
+    }
+}
+
 - (CGPoint)bounceTargetPointWithStartPoint:(CGPoint)startPoint EndPoint:(CGPoint)endPoint
 {
     float widthBounceTarget = [self.bouncingDistance floatValue] * (startPoint.x - endPoint.x);
@@ -117,11 +130,17 @@
     CGPoint previousButtonPosition = CGPointZero;
     CGPoint currentButtonPosition = CGPointZero;
     CGPoint bouncePosition = CGPointZero;
+    CGPoint previousLabelPosition = CGPointZero;
+    CGPoint currentLabelPosition = CGPointZero;
+    CGPoint labelBouncePosition = CGPointZero;
     int16_t startIdx = 0;
     
     for (int16_t item = 0; item < [self.bounceButtons count]; item++) {
         CGMutablePathRef thePath = CGPathCreateMutable();
         CGPathMoveToPoint(thePath, NULL, self.startAnimationPoint.x, self.startAnimationPoint.y);
+        
+        CGMutablePathRef labelPath = CGPathCreateMutable();
+        CGPathMoveToPoint(labelPath, NULL, self.startAnimationPoint.x, self.startAnimationPoint.y);
         
         previousButtonPosition = CGPathGetCurrentPoint(thePath);
         
@@ -132,47 +151,69 @@
         for (int16_t idx = startIdx; idx <= item; idx++) {
             UIButton *bounceButton = [self.bounceButtons objectAtIndex:idx];
             
+            /* I'm not putting in any null checks or count checks, this is a quick fix and in the case of this
+             * particular project, the count for the labels will always be the same as the count for the buttons
+             *      RJM
+             */
+            UILabel *bounceLabel = [self.bounceLabels objectAtIndex:idx];
+            
             currentButtonPosition = CGPointMake(bounceButton.frame.origin.x + (bounceButton.frame.size.width/2), bounceButton.frame.origin.y + (bounceButton.frame.size.height/2));
+            currentLabelPosition = CGPointMake(bounceLabel.frame.origin.x + (bounceLabel.frame.size.width/2), bounceLabel.frame.origin.y + (bounceLabel.frame.size.height/2));
             
             if (idx == item) {
                 // Calculate the bounce target point
                 bouncePosition = [self bounceTargetPointWithStartPoint:previousButtonPosition EndPoint:currentButtonPosition];
+                labelBouncePosition = [self bounceTargetPointWithStartPoint:previousLabelPosition EndPoint:currentLabelPosition];
                 
                 CGPathAddLineToPoint(thePath, NULL, bouncePosition.x, bouncePosition.y);
+                CGPathAddLineToPoint(labelPath, NULL, labelBouncePosition.x, labelBouncePosition.y);
             }
             
             CGPathAddLineToPoint(thePath, NULL, currentButtonPosition.x, currentButtonPosition.y);
+            CGPathAddLineToPoint(labelPath, NULL, currentLabelPosition.x, currentLabelPosition.y);
             
             previousButtonPosition = currentButtonPosition;
+            previousLabelPosition = currentLabelPosition;
         }
         
         CAKeyframeAnimation * theAnimation;
+        CAKeyframeAnimation * labelAnimation;
         
         // Create the animation object, specifying the position property as the key path.
         theAnimation=[CAKeyframeAnimation animationWithKeyPath:@"position"];
         theAnimation.path=thePath;
         
+        labelAnimation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
+        labelAnimation.path = labelPath;
+        
         if (animationStyle != ASOAnimationStyleRiseConcurrently) {
             theAnimation.duration = [self.speed floatValue] * (item + 1);
+            labelAnimation.duration = [self.speed floatValue] * (item + 1);
         } else {
             theAnimation.duration = [self.speed floatValue];
+            labelAnimation.duration = [self.speed floatValue];
         }
 
         // Add the animation to the layer.
         [[self.bounceButtons objectAtIndex:item] layer].opacity = 1.0;
         [[[self.bounceButtons objectAtIndex:item] layer] addAnimation:theAnimation forKey:@"position"];
+        
+        [[self.bounceLabels objectAtIndex:item] layer].opacity = 1.0;
+        [[[self.bounceLabels objectAtIndex:item] layer] addAnimation:labelAnimation forKey:@"positoin"];
     }
 }
 
 - (void)collapseWithAnimationStyle:(ASOAnimationStyle)animationStyle
 {
     UIButton *bounceButton = [[UIButton alloc] init];
+    UILabel *bounceLabel = [[UILabel alloc] init];
     self.collapsedViewDuration = [NSNumber numberWithFloat:0.0];
     int16_t lastIdx = 0;
     
     // Process and collapse all the buttons
     for (int16_t item = 0; item < [self.bounceButtons count]; item++) {
         CGMutablePathRef thePath = CGPathCreateMutable();
+        CGMutablePathRef labelPath = CGPathCreateMutable();
         
         if (animationStyle != ASOAnimationStyleExpand) {
             lastIdx = item;
@@ -180,43 +221,64 @@
         
         for (int16_t idx = item; idx >= lastIdx; idx--) {
             bounceButton = [self.bounceButtons objectAtIndex:idx];
+            bounceLabel = [self.bounceLabels objectAtIndex:idx];
             if (idx == item) {
                 CGPathMoveToPoint(thePath, NULL, bounceButton.frame.origin.x + (bounceButton.frame.size.width/2), bounceButton.frame.origin.y + (bounceButton.frame.size.height/2));
+                CGPathMoveToPoint(labelPath, NULL, bounceLabel.frame.origin.x + (bounceLabel.frame.size.width/2), bounceLabel.frame.origin.y + (bounceLabel.frame.size.height/2));
             }
             else {
                 CGPathAddLineToPoint(thePath, NULL, bounceButton.frame.origin.x + (bounceButton.frame.size.width/2), bounceButton.frame.origin.y + (bounceButton.frame.size.height/2));
+                CGPathAddLineToPoint(labelPath, NULL, bounceLabel.frame.origin.x + (bounceLabel.frame.size.width/2), bounceLabel.frame.origin.y + (bounceLabel.frame.size.height/2));
             }
             
         }
         
         CGPathAddLineToPoint(thePath,NULL,self.startAnimationPoint.x, self.startAnimationPoint.y);
+        CGPathAddLineToPoint(labelPath, NULL, self.startAnimationPoint.x, self.startAnimationPoint.y);
         
         CAKeyframeAnimation * collapsedAnimation;
         collapsedAnimation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
         collapsedAnimation.path = thePath;
         
+        CAKeyframeAnimation * labelCollAnimation;
+        labelCollAnimation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
+        labelCollAnimation.path = labelPath;
+        
         CABasicAnimation *theFadeOutAnimation = [CABasicAnimation animationWithKeyPath:@"opacity"];
         theFadeOutAnimation.fromValue = [NSNumber numberWithFloat:1.0];
         theFadeOutAnimation.toValue = [NSNumber numberWithFloat:0.0];
         
+        CABasicAnimation *labFadeOutAnimation = [CABasicAnimation animationWithKeyPath:@"opacity"];
+        labFadeOutAnimation.fromValue = [NSNumber numberWithFloat:1.0];
+        labFadeOutAnimation.toValue = [NSNumber numberWithFloat:0.0];
+        
         if (animationStyle != ASOAnimationStyleRiseConcurrently) {
             theFadeOutAnimation.duration = [self.speed floatValue] * (item + 1);
+            labFadeOutAnimation.duration = [self.speed floatValue] * (item + 1);
         } else {
             theFadeOutAnimation.duration = [self.speed floatValue];
+            labFadeOutAnimation.duration = [self.speed floatValue];
         }
         
         [[self.bounceButtons objectAtIndex:item] layer].opacity = 0.0;
+        [[self.bounceLabels objectAtIndex:item] layer].opacity = 0.0;
         
         CAAnimationGroup *groupedAnimation = [CAAnimationGroup animation];
         groupedAnimation.animations = [NSArray arrayWithObjects:collapsedAnimation, theFadeOutAnimation, nil];
         
+        CAAnimationGroup *labGrpdAnimation = [CAAnimationGroup animation];
+        labGrpdAnimation.animations = [NSArray arrayWithObjects:labelCollAnimation, labFadeOutAnimation, nil];
+        
         if (animationStyle != ASOAnimationStyleRiseConcurrently) {
             groupedAnimation.duration = [self.speed floatValue] * (item + 1);
+            labGrpdAnimation.duration = [self.speed floatValue] * (item + 1);
         } else {
             groupedAnimation.duration = [self.speed floatValue];
+            labGrpdAnimation.duration = [self.speed floatValue];
         }
         
         [[[self.bounceButtons objectAtIndex:item] layer] addAnimation:groupedAnimation forKey:@"collapsed-fadeout"];
+        [[[self.bounceLabels objectAtIndex:item] layer] addAnimation:labGrpdAnimation forKey:@"collapsed-fadeout"];
     }
     
     self.collapsedViewDuration = [NSNumber numberWithDouble:([self.speed doubleValue] * [self.bounceButtons count])];
