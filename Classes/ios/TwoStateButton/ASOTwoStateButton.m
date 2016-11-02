@@ -67,8 +67,12 @@ const int16_t kCustomViewTag = 702;
         }
         
         UIImageView *onStateImageView = [[UIImageView alloc] initWithImage:onStateImage];
+        [onStateImageView setFrame:CGRectMake(0, 0, self.frame.size.width, self.frame.size.height)];
+        onStateImageView.contentMode = UIViewContentModeScaleAspectFill;
         
         UIImageView *offStateImageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:self.offStateImageName]];
+        [offStateImageView setFrame:CGRectMake(0, 0, self.frame.size.width, self.frame.size.height)];
+        offStateImageView.contentMode = UIViewContentModeScaleAspectFill;
         
         // When on-state and off-state images are not found, this becomes a normal UIButton class
         [offStateImageView setTag:kOffStateViewTag];
